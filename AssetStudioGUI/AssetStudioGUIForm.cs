@@ -108,7 +108,7 @@ namespace AssetStudioGUI
             logger = new GUILogger(StatusStripUpdate);
             Logger.Default = logger;
             Progress.Default = new Progress<int>(SetProgressBarValue);
-            Studio.StatusStripUpdate = StatusStripUpdate;
+            StudioX.StatusStripUpdate = StatusStripUpdate;
         }
 
         private void AssetStudioGUIForm_DragEnter(object sender, DragEventArgs e)
@@ -192,7 +192,7 @@ namespace AssetStudioGUI
                 {
                     var path = openFolderDialog.Folder;
                     var savePath = saveFolderDialog.Folder;
-                    var extractedCount = await Task.Run(() => ExtractFolder(path, savePath));
+                    var extractedCount = await Task.Run(() => StudioX.ExtractFolder(path, savePath));
                     StatusStripUpdate($"Finished extracting {extractedCount} files.");
                 }
             }
