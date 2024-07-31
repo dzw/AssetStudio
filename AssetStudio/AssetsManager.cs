@@ -64,10 +64,62 @@ namespace AssetStudio
 
         private void LoadFile(string fullName)
         {
+            long unityFsOffset = UnityFS_Offset(fullName);
+            if (unityFsOffset > 0)
+            {
+                string destFileName = fullName + "_";
+
+                CopyFileByOffset(fullName, unityFsOffset, destFileName);
+
+                fullName = destFileName;
+            }
             var reader = new FileReader(fullName);
             LoadFile(reader);
         }
+        private static void CopyFileByOffset(string srcFile, long startOffset, string destFile)
+        {
+            using (FileStream src = File.Open(srcFile, FileMode.Open))
+            {
+                FileStream dst = File.Open(destFile, FileMode.OpenOrCreate);
+                src.Position = startOffset;
+                src.CopyTo(dst);
+                dst.Flush();
+                dst.Close();
+            }
+        }        
+        private static long UnityFS_Offset(string file)
+        {
+            //UnityFS
+            using (FileStream sr = File.Open(file, FileMode.Open))
+            {
+                //This is an arbitrary size for this example.
+                string unityfs = "UnityFS";
+                int unityfsLength = unityfs.Length;
+                Queue<char> Header = new Queue<char>(unityfs.ToCharArray());
+                while (true)
+                {
+                    if (Header.Count == 0)
+                        return sr.Position-unityfsLength;
 
+                    char headChar = Header.Peek();
+
+                    int readChar = sr.ReadByte();
+                    if (readChar == -1)
+                        return -1;
+                
+                    if (readChar == headChar)
+                        Header.Dequeue();
+                    else
+                    {
+                    
+                        if(Header.Count!=unityfsLength)
+                            Header = new Queue<char>(unityfs.ToCharArray()); //reset
+                    }
+                }
+            }
+
+            return -1;
+        }
         private void LoadFile(FileReader reader)
         {
             switch (reader.FileType)

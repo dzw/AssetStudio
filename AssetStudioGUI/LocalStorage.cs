@@ -8,6 +8,7 @@ namespace AssetStudioGUI
     public class LocalStorage
     {
         private static Dictionary<string, string> dic;
+        private static string prefJson = "pref.json";
 
         public static void SetString(string key, string val)
         {
@@ -23,20 +24,22 @@ namespace AssetStudioGUI
             StringWriter sw = new StringWriter(sb);
             JsonTextWriter jsonTextReader = new JsonTextWriter(sw);
             new JsonSerializer().Serialize(jsonTextReader, dic);
-            File.WriteAllText("pref.json", sb.ToString());
+            File.WriteAllText(prefJson, sb.ToString());
         }
 
         public static string GetString(string key, string defVal)
         {
             if (dic == null)
             {
-                if (File.Exists("pref.json"))
+                if (File.Exists(prefJson))
                 {
                     // string readAllText = File.ReadAllText("pref.json");
                     // dic = JsonSerializer.Deserialize<Dictionary<string, string>>(readAllText);
 
-                    JsonTextReader jsonTextReader = new JsonTextReader(File.OpenText("pref.json"));
+                    StreamReader streamReader = File.OpenText(prefJson);
+                    JsonTextReader jsonTextReader = new JsonTextReader(streamReader);
                     dic = new JsonSerializer().Deserialize<Dictionary<string, string>>(jsonTextReader);
+                    jsonTextReader.Close();
                 }
             }
 
