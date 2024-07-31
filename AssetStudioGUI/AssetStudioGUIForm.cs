@@ -109,6 +109,13 @@ namespace AssetStudioGUI
             Logger.Default = logger;
             Progress.Default = new Progress<int>(SetProgressBarValue);
             StudioX.StatusStripUpdate = StatusStripUpdate;
+
+            string ver = LocalStorage.GetString("unityVersion", "");
+            if (!string.IsNullOrEmpty(ver))
+            {
+                specifyUnityVersion.Text = ver;
+                assetsManager.SpecifyUnityVersion = ver;
+            }
         }
 
         private void AssetStudioGUIForm_DragEnter(object sender, DragEventArgs e)
@@ -125,7 +132,7 @@ namespace AssetStudioGUI
             if (paths.Length > 0)
             {
                 ResetForm();
-                assetsManager.SpecifyUnityVersion = specifyUnityVersion.Text;
+                SetUnityVersion(specifyUnityVersion.Text);
                 if (paths.Length == 1 && Directory.Exists(paths[0]))
                 {
                     await Task.Run(() => assetsManager.LoadFolder(paths[0]));
@@ -138,6 +145,12 @@ namespace AssetStudioGUI
             }
         }
 
+        private static void SetUnityVersion(string unityVersion)
+        {
+            LocalStorage.SetString("unityVersion", unityVersion);
+            assetsManager.SpecifyUnityVersion = unityVersion;
+        }
+
         private async void loadFile_Click(object sender, EventArgs e)
         {
             openFileDialog1.InitialDirectory = openDirectoryBackup;
@@ -145,7 +158,7 @@ namespace AssetStudioGUI
             {
                 ResetForm();
                 openDirectoryBackup = Path.GetDirectoryName(openFileDialog1.FileNames[0]);
-                assetsManager.SpecifyUnityVersion = specifyUnityVersion.Text;
+                SetUnityVersion(specifyUnityVersion.Text);
                 await Task.Run(() => assetsManager.LoadFiles(openFileDialog1.FileNames));
                 BuildAssetStructures();
             }
@@ -159,7 +172,7 @@ namespace AssetStudioGUI
             {
                 ResetForm();
                 openDirectoryBackup = openFolderDialog.Folder;
-                assetsManager.SpecifyUnityVersion = specifyUnityVersion.Text;
+                SetUnityVersion(specifyUnityVersion.Text);
                 await Task.Run(() => assetsManager.LoadFolder(openFolderDialog.Folder));
                 BuildAssetStructures();
             }
