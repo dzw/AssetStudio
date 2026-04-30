@@ -109,6 +109,12 @@ namespace AssetStudio
             {
                 var m_StreamingMipmapsPriority = reader.ReadInt32();
             }
+            if (version[0] > 2022 || (version[0] == 2022 && version[1] >= 2)) //2022.2 and up
+            {
+                var m_MipmapLimitGroupName = reader.ReadAlignedString();
+                var m_IgnoreMipmapLimit = reader.ReadBoolean();
+                reader.AlignStream();
+            }
             var m_ImageCount = reader.ReadInt32();
             var m_TextureDimension = reader.ReadInt32();
             m_TextureSettings = new GLTextureSettings(reader);
