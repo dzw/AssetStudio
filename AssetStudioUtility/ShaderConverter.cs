@@ -214,7 +214,23 @@ namespace AssetStudio
                                     sb.Append($"hw_tier{subProgram.m_ShaderHardwareTier:00} ");
                                 }
                                 sb.Append("\" {\n");
-                                sb.Append(shaderPrograms[i].m_SubPrograms[subProgram.m_BlobIndex].Export());
+                                var shaderProgram = shaderPrograms[i];
+                                if (shaderProgram?.m_SubPrograms == null || subProgram.m_BlobIndex >= shaderProgram.m_SubPrograms.Length)
+                                {
+                                    sb.Append("// shader subprogram data is not available for this platform\n");
+                                }
+                                else
+                                {
+                                    var shaderSubProgram = shaderProgram.m_SubPrograms[subProgram.m_BlobIndex];
+                                    if (shaderSubProgram == null)
+                                    {
+                                        sb.Append("// shader subprogram data is not available for this blob index\n");
+                                    }
+                                    else
+                                    {
+                                        sb.Append(shaderSubProgram.Export());
+                                    }
+                                }
                                 sb.Append("\n}\n");
                             }
                             break;
@@ -905,8 +921,15 @@ namespace AssetStudio
                 var entry = entries[i];
                 if (entry.Segment == segment)
                 {
-                    reader.BaseStream.Position = entry.Offset;
-                    m_SubPrograms[i] = new ShaderSubProgram(reader);
+                    try
+                    {
+                        reader.BaseStream.Position = entry.Offset;
+                        m_SubPrograms[i] = new ShaderSubProgram(reader);
+                    }
+                    catch (Exception ex) when (ex is EndOfStreamException || ex is IOException || ex is ArgumentException)
+                    {
+                        m_SubPrograms[i] = ShaderSubProgram.CreateUnreadable(ex.Message);
+                    }
                 }
             }
         }
@@ -926,10 +949,15 @@ namespace AssetStudio
     public class ShaderSubProgram
     {
         private int m_Version;
+        private string m_ReadError;
         public ShaderGpuProgramType m_ProgramType;
         public string[] m_Keywords;
         public string[] m_LocalKeywords;
         public byte[] m_ProgramCode;
+
+        private ShaderSubProgram()
+        {
+        }
 
         public ShaderSubProgram(BinaryReader reader)
         {
@@ -970,9 +998,25 @@ namespace AssetStudio
             //TODO
         }
 
+        public static ShaderSubProgram CreateUnreadable(string error)
+        {
+            return new ShaderSubProgram
+            {
+                m_ReadError = error,
+                m_Keywords = Array.Empty<string>(),
+                m_LocalKeywords = Array.Empty<string>(),
+                m_ProgramCode = Array.Empty<byte>()
+            };
+        }
+
         public string Export()
         {
             var sb = new StringBuilder();
+            if (!string.IsNullOrEmpty(m_ReadError))
+            {
+                sb.Append($"// shader subprogram data is not supported by this converter: {m_ReadError}\n");
+                return sb.ToString();
+            }
             if (m_Keywords.Length > 0)
             {
                 sb.Append("Keywords { ");
