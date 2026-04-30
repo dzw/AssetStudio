@@ -1,7 +1,8 @@
-﻿using K4os.Compression.LZ4;
+using K4os.Compression.LZ4;
 using System;
 using System.IO;
 using System.Linq;
+using ZstdSharp;
 
 namespace AssetStudio
 {
@@ -33,6 +34,51 @@ namespace AssetStudio
 
     public class BundleFile
     {
+        private static readonly byte[] ZstdSignature = { 0x28, 0xB5, 0x2F, 0xFD };
+
+        private static bool IsZstd(byte[] data)
+        {
+            if (data.Length < 4)
+                return false;
+            return data[0] == ZstdSignature[0] &&
+                   data[1] == ZstdSignature[1] &&
+                   data[2] == ZstdSignature[2] &&
+                   data[3] == ZstdSignature[3];
+        }
+
+        private static bool IsZstdStream(Stream stream)
+        {
+            long position = stream.Position;
+            byte[] buffer = new byte[4];
+            stream.Read(buffer, 0, 4);
+            stream.Position = position;
+            return IsZstd(buffer);
+        }
+
+        private static void DecompressZstd(byte[] compressedData, byte[] decompressedData)
+        {
+            using (var decompressor = new Decompressor())
+            {
+                var result = decompressor.Unwrap(compressedData, decompressedData);
+                if (result != decompressedData.Length)
+                {
+                    throw new IOException($"Zstd decompression error, write {result} bytes but expected {decompressedData.Length} bytes");
+                }
+            }
+        }
+
+        private static void DecompressZstdStream(Stream compressedStream, long compressedSize, Stream decompressedStream, long decompressedSize)
+        {
+            var compressedBytes = new byte[compressedSize];
+            compressedStream.Read(compressedBytes, 0, (int)compressedSize);
+
+            using (var decompressor = new Decompressor())
+            {
+                var decompressedBytes = decompressor.Unwrap(compressedBytes).ToArray();
+                decompressedStream.Write(decompressedBytes, 0, decompressedBytes.Length);
+            }
+        }
+
         public class Header
         {
             public string signature;
@@ -278,7 +324,20 @@ namespace AssetStudio
                         break;
                     }
                 default:
-                    throw new IOException($"Unsupported compression type {compressionType}");
+                    {
+                        // Try to detect Zstd by signature
+                        if (IsZstd(blocksInfoBytes))
+                        {
+                            var uncompressedBytes = new byte[uncompressedSize];
+                            DecompressZstd(blocksInfoBytes, uncompressedBytes);
+                            blocksInfoUncompresseddStream = new MemoryStream(uncompressedBytes);
+                        }
+                        else
+                        {
+                            throw new IOException($"Unsupported compression type {compressionType}");
+                        }
+                        break;
+                    }
             }
             using (var blocksInfoReader = new EndianBinaryReader(blocksInfoUncompresseddStream))
             {
@@ -350,7 +409,18 @@ namespace AssetStudio
                             break;
                         }
                     default:
-                        throw new IOException($"Unsupported compression type {compressionType}");
+                        {
+                            // Try to detect Zstd by signature
+                            if (IsZstdStream(reader.BaseStream))
+                            {
+                                DecompressZstdStream(reader.BaseStream, blockInfo.compressedSize, blocksStream, blockInfo.uncompressedSize);
+                            }
+                            else
+                            {
+                                throw new IOException($"Unsupported compression type {compressionType}");
+                            }
+                            break;
+                        }
                 }
             }
             blocksStream.Position = 0;
