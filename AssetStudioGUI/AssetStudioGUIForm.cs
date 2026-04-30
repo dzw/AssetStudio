@@ -77,6 +77,9 @@ namespace AssetStudioGUI
         private int sortColumn = -1;
         private bool reverseSort;
 
+        //current opened path
+        private string currentOpenPath;
+
         //asset list filter
         private System.Timers.Timer delayTimer;
         private bool enableFiltering;
@@ -135,10 +138,12 @@ namespace AssetStudioGUI
                 SetUnityVersion(specifyUnityVersion.Text);
                 if (paths.Length == 1 && Directory.Exists(paths[0]))
                 {
+                    currentOpenPath = paths[0];
                     await Task.Run(() => assetsManager.LoadFolder(paths[0]));
                 }
                 else
                 {
+                    currentOpenPath = string.Join(" | ", paths);
                     await Task.Run(() => assetsManager.LoadFiles(paths));
                 }
                 BuildAssetStructures();
@@ -159,6 +164,7 @@ namespace AssetStudioGUI
                 ResetForm();
                 openDirectoryBackup = Path.GetDirectoryName(openFileDialog1.FileNames[0]);
                 SetUnityVersion(specifyUnityVersion.Text);
+                currentOpenPath = string.Join(" | ", openFileDialog1.FileNames);
                 await Task.Run(() => assetsManager.LoadFiles(openFileDialog1.FileNames));
                 BuildAssetStructures();
             }
@@ -173,6 +179,7 @@ namespace AssetStudioGUI
                 ResetForm();
                 openDirectoryBackup = openFolderDialog.Folder;
                 SetUnityVersion(specifyUnityVersion.Text);
+                currentOpenPath = openFolderDialog.Folder;
                 await Task.Run(() => assetsManager.LoadFolder(openFolderDialog.Folder));
                 BuildAssetStructures();
             }
@@ -222,13 +229,14 @@ namespace AssetStudioGUI
             (var productName, var treeNodeCollection) = await Task.Run(() => BuildAssetData());
             var typeMap = await Task.Run(() => BuildClassStructure());
 
+            var pathInfo = string.IsNullOrEmpty(currentOpenPath) ? "" : $" - {currentOpenPath}";
             if (!string.IsNullOrEmpty(productName))
             {
-                Text = $"AssetStudioGUI v{Application.ProductVersion} - {productName} - {assetsManager.assetsFileList[0].unityVersion} - {assetsManager.assetsFileList[0].m_TargetPlatform}";
+                Text = $"AssetStudioGUI v{Application.ProductVersion}{pathInfo} - {productName} - {assetsManager.assetsFileList[0].unityVersion} - {assetsManager.assetsFileList[0].m_TargetPlatform}";
             }
             else
             {
-                Text = $"AssetStudioGUI v{Application.ProductVersion} - no productName - {assetsManager.assetsFileList[0].unityVersion} - {assetsManager.assetsFileList[0].m_TargetPlatform}";
+                Text = $"AssetStudioGUI v{Application.ProductVersion}{pathInfo} - {assetsManager.assetsFileList[0].unityVersion} - {assetsManager.assetsFileList[0].m_TargetPlatform}";
             }
 
             assetListView.VirtualListSize = visibleAssets.Count;
@@ -1231,6 +1239,7 @@ namespace AssetStudioGUI
         private void ResetForm()
         {
             Text = $"AssetStudioGUI v{Application.ProductVersion}";
+            currentOpenPath = null;
             assetsManager.Clear();
             assemblyLoader.Clear();
             exportableAssets.Clear();

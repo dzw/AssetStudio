@@ -849,8 +849,48 @@ namespace AssetStudio
             }
         }
 
+        public int GetTotalCurveCount()
+        {
+            int curves = 0;
+            if (genericBindings == null)
+            {
+                return 0;
+            }
+            foreach (var b in genericBindings)
+            {
+                if (b.typeID == ClassIDType.Transform)
+                {
+                    switch (b.attribute)
+                    {
+                        case 1: //kBindTransformPosition
+                        case 3: //kBindTransformScale
+                        case 4: //kBindTransformEuler
+                            curves += 3;
+                            break;
+                        case 2: //kBindTransformRotation
+                            curves += 4;
+                            break;
+                        default:
+                            curves += 1;
+                            break;
+                    }
+                }
+                else
+                {
+                    curves += 1;
+                }
+            }
+            return curves;
+        }
+
         public GenericBinding FindBinding(int index)
         {
+            if (genericBindings == null || genericBindings.Length == 0)
+            {
+                Logger.Warning($"FindBinding failed: genericBindings is null or empty, index={index}");
+                return null;
+            }
+
             int curves = 0;
             foreach (var b in genericBindings)
             {
@@ -881,6 +921,8 @@ namespace AssetStudio
                 }
             }
 
+            int totalCurves = curves;
+            Logger.Warning($"FindBinding failed: index={index} exceeds total curve count={totalCurves}, bindings count={genericBindings.Length}");
             return null;
         }
     }
