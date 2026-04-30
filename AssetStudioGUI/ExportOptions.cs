@@ -1,4 +1,4 @@
-﻿using AssetStudio;
+using AssetStudio;
 using System;
 using System.Windows.Forms;
 
@@ -11,6 +11,7 @@ namespace AssetStudioGUI
             InitializeComponent();
             assetGroupOptions.SelectedIndex = Properties.Settings.Default.assetGroupOption;
             restoreExtensionName.Checked = Properties.Settings.Default.restoreExtensionName;
+            useContainerPath.Checked = Properties.Settings.Default.useContainerPath;
             converttexture.Checked = Properties.Settings.Default.convertTexture;
             convertAudio.Checked = Properties.Settings.Default.convertAudio;
             var str = Properties.Settings.Default.convertType.ToString();
@@ -42,6 +43,7 @@ namespace AssetStudioGUI
         {
             Properties.Settings.Default.assetGroupOption = assetGroupOptions.SelectedIndex;
             Properties.Settings.Default.restoreExtensionName = restoreExtensionName.Checked;
+            Properties.Settings.Default.useContainerPath = useContainerPath.Checked;
             Properties.Settings.Default.convertTexture = converttexture.Checked;
             Properties.Settings.Default.convertAudio = convertAudio.Checked;
             foreach (Control c in panel1.Controls)

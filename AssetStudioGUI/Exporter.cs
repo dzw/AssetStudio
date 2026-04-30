@@ -1,4 +1,4 @@
-﻿using AssetStudio;
+using AssetStudio;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
@@ -375,16 +375,23 @@ namespace AssetRipperPatches.Editor
         private static bool TryExportFile(string dir, AssetItem item, string extension, out string fullPath)
         {
             var fileName = FixFileName(item.Text);
-           
             fullPath = Path.Combine(dir, fileName + extension);
-            if (item.Type == ClassIDType.AudioClip)
+
+            // Use container path for Texture2D, Sprite, and AudioClip when enabled
+            if (Properties.Settings.Default.useContainerPath && !string.IsNullOrEmpty(item.Container))
             {
-                string combine = Path.Combine(dir, item.Container);
-                dir = Path.GetDirectoryName(combine);
-                string name = Path.GetFileNameWithoutExtension(combine);
-                fullPath = Path.Combine(dir, name + extension);
+                if (item.Type == ClassIDType.Texture2D || item.Type == ClassIDType.Sprite || item.Type == ClassIDType.AudioClip)
+                {
+                    var containerDir = Path.GetDirectoryName(item.Container);
+                    var containerName = Path.GetFileNameWithoutExtension(item.Container);
+                    if (!string.IsNullOrEmpty(containerDir))
+                    {
+                        dir = Path.Combine(dir, containerDir);
+                    }
+                    fullPath = Path.Combine(dir, containerName + extension);
+                }
             }
-            
+
             if (!File.Exists(fullPath))
             {
                 Directory.CreateDirectory(dir);

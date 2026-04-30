@@ -274,5 +274,17 @@ namespace AssetStudioGUI.Properties {
                 this["exportAllUvsAsDiffuseMaps"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool useContainerPath {
+            get {
+                return ((bool)(this["useContainerPath"]));
+            }
+            set {
+                this["useContainerPath"] = value;
+            }
+        }
     }
 }
