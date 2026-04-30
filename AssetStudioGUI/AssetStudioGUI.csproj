@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
@@ -10,6 +10,7 @@
 		<Copyright>Copyright © Perfare 2018-2022</Copyright>
 		<DebugType>embedded</DebugType>
 		<TargetFramework>net472</TargetFramework>
+		<GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -66,6 +67,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="System.Resources.Extensions" Version="6.0.0" />
 	</ItemGroup>
 
 	<Target Name="CopyExtraFiles" AfterTargets="AfterBuild">

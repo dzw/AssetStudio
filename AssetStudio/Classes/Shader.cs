@@ -977,7 +977,11 @@ namespace AssetStudio
 
         public Shader(ObjectReader reader) : base(reader)
         {
-            if (version[0] == 5 && version[1] >= 5 || version[0] > 5) //5.5 and up
+            if (version[0] >= 6000)
+            {
+                m_Script = GetRawData();
+            }
+            else if (version[0] == 5 && version[1] >= 5 || version[0] > 5) //5.5 and up
             {
                 m_ParsedForm = new SerializedShader(reader);
                 platforms = reader.ReadUInt32Array().Select(x => (ShaderCompilerPlatform)x).ToArray();

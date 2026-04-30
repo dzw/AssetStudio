@@ -1,0 +1,140 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/AssetStudioGUI/AssetStudioGUI.csproj",
+                "/p:Configuration=Debug",
+                "/p:TargetFramework=net472"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "build-cli",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/AssetStudioCli/AssetStudioCli.csproj",
+                "-c",
+                "Debug"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "build-gui-net6",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/AssetStudioGUI/AssetStudioGUI.csproj",
+                "-f",
+                "net6.0",
+                "-c",
+                "Debug"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "build-all",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/AssetStudio.sln",
+                "-c",
+                "Debug"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "build-core",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/AssetStudio/AssetStudio.csproj",
+                "-c",
+                "Debug"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "build-utility",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/AssetStudioUtility/AssetStudioUtility.csproj",
+                "-c",
+                "Debug"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "clean",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "clean",
+                "${workspaceFolder}/AssetStudio.sln"
+            ],
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "restore",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "restore",
+                "${workspaceFolder}/AssetStudio.sln"
+            ],
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        }
+    ]
+}

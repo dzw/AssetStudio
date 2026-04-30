@@ -219,7 +219,7 @@ namespace AssetStudio
                 catch (Exception e)
                 {
                     Logger.Error($"Error while reading assets file {reader.FullPath} from {Path.GetFileName(originalPath)}", e);
-                    resourceFileReaders.Add(reader.FileName, reader);
+                    AddResourceFileReader(reader.FileName, reader);
                 }
             }
             else
@@ -242,7 +242,8 @@ namespace AssetStudio
                     }
                     else
                     {
-                        resourceFileReaders[file.fileName] = subReader; //TODO
+                        AddResourceFileReader(file.path, subReader);
+                        AddResourceFileReader(file.fileName, subReader);
                     }
                 }
             }
@@ -283,7 +284,8 @@ namespace AssetStudio
                             LoadWebFile(subReader);
                             break;
                         case FileType.ResourceFile:
-                            resourceFileReaders[file.fileName] = subReader; //TODO
+                            AddResourceFileReader(file.path, subReader);
+                            AddResourceFileReader(file.fileName, subReader);
                             break;
                     }
                 }
@@ -375,10 +377,8 @@ namespace AssetStudio
                             if (entryReader.FileType == FileType.ResourceFile)
                             {
                                 entryReader.Position = 0;
-                                if (!resourceFileReaders.ContainsKey(entry.Name))
-                                {
-                                    resourceFileReaders.Add(entry.Name, entryReader);
-                                }
+                                AddResourceFileReader(entry.FullName, entryReader);
+                                AddResourceFileReader(entry.Name, entryReader);
                             }
                         }
                         catch (Exception e)
@@ -419,13 +419,35 @@ namespace AssetStudio
             }
             assetsFileList.Clear();
 
-            foreach (var resourceFileReader in resourceFileReaders)
+            foreach (var resourceFileReader in resourceFileReaders.Values.Distinct())
             {
-                resourceFileReader.Value.Close();
+                resourceFileReader.Close();
             }
             resourceFileReaders.Clear();
 
             assetsFileIndexCache.Clear();
+        }
+
+        internal void AddResourceFileReader(string name, BinaryReader reader)
+        {
+            foreach (var lookupName in ResourceFileNameHelper.GetRegistrationNames(name))
+            {
+                resourceFileReaders[lookupName] = reader;
+            }
+        }
+
+        internal bool TryGetResourceFileReader(string name, out BinaryReader reader)
+        {
+            foreach (var lookupName in ResourceFileNameHelper.GetLookupNames(name))
+            {
+                if (resourceFileReaders.TryGetValue(lookupName, out reader))
+                {
+                    return true;
+                }
+            }
+
+            reader = null;
+            return false;
         }
 
         private void ReadAssets()

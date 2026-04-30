@@ -1,0 +1,44 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch AssetStudioGUI",
+            "type": "clr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/AssetStudioGUI/bin/Debug/net472/AssetStudioGUI.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch AssetStudioCli",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-cli",
+            "program": "${workspaceFolder}/AssetStudioCli/bin/Debug/net6.0/AssetStudioCli.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch AssetStudioGUI (.NET 6)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-gui-net6",
+            "program": "${workspaceFolder}/AssetStudioGUI/bin/Debug/net6.0-windows/AssetStudioGUI.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Attach to Process",
+            "type": "clr",
+            "request": "attach"
+        }
+    ]
+}
