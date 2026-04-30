@@ -529,6 +529,28 @@ namespace AssetStudio
                             case ClassIDType.ResourceManager:
                                 obj = new ResourceManager(objectReader);
                                 break;
+                            // New types from modern Unity versions
+                            case ClassIDType.VisualEffect:
+                                obj = new VisualEffect(objectReader);
+                                break;
+                            case ClassIDType.VisualEffectAsset:
+                                obj = new VisualEffectAsset(objectReader);
+                                break;
+                            case ClassIDType.VFXManager:
+                                obj = new VFXManager(objectReader);
+                                break;
+                            case ClassIDType.Tilemap:
+                                obj = new Tilemap(objectReader);
+                                break;
+                            case ClassIDType.Grid:
+                                obj = new Grid(objectReader);
+                                break;
+                            case ClassIDType.LocalizationAsset:
+                                obj = new LocalizationAsset(objectReader);
+                                break;
+                            case ClassIDType.PrefabInstance:
+                                obj = new PrefabInstance(objectReader);
+                                break;
                             default:
                                 obj = new Object(objectReader);
                                 break;
