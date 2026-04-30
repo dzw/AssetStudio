@@ -12,6 +12,11 @@ namespace AssetStudio
     {
         public static string Convert(this Shader shader)
         {
+            if (shader.version[0] >= 6000 && shader.compressedBlob == null && shader.m_SubProgramBlob == null)
+            {
+                return $"Shader \"{shader.m_Name}\"\n\nUnity 6000+ serialized shader parsing is not supported by this AssetStudio shader converter yet.\nUse raw export to preserve the original shader object data.";
+            }
+
             if (shader.m_SubProgramBlob != null) //5.3 - 5.4
             {
                 var decompressedBytes = new byte[shader.decompressedSize];
@@ -20,16 +25,16 @@ namespace AssetStudio
                 {
                     var program = new ShaderProgram(blobReader, shader.version);
                     program.Read(blobReader, 0);
-                    return header + program.Export(Encoding.UTF8.GetString(shader.m_Script));
+                    return program.Export(Encoding.UTF8.GetString(shader.m_Script));
                 }
             }
 
             if (shader.compressedBlob != null) //5.5 and up
             {
-                return header + ConvertSerializedShader(shader);
+                return ConvertSerializedShader(shader);
             }
 
-            return header + Encoding.UTF8.GetString(shader.m_Script);
+            return Encoding.UTF8.GetString(shader.m_Script);
         }
 
         private static string ConvertSerializedShader(Shader shader)
@@ -858,11 +863,6 @@ namespace AssetStudio
             }
         }
 
-        private static string header = "//////////////////////////////////////////\n" +
-                                      "//\n" +
-                                      "// NOTE: This is *not* a valid shader file\n" +
-                                      "//\n" +
-                                      "///////////////////////////////////////////\n";
     }
 
     public class ShaderSubProgramEntry

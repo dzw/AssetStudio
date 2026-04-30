@@ -691,6 +691,8 @@ namespace AssetStudio
     public class SerializedProgram
     {
         public SerializedSubProgram[] m_SubPrograms;
+        public SerializedPlayerSubProgram[][] m_PlayerSubPrograms;
+        public uint[][] m_ParameterBlobIndices;
         public SerializedProgramParameters m_CommonParameters;
         public ushort[] m_SerializedKeywordStateMask;
 
@@ -703,6 +705,14 @@ namespace AssetStudio
             for (int i = 0; i < numSubPrograms; i++)
             {
                 m_SubPrograms[i] = new SerializedSubProgram(reader);
+            }
+
+            if (version[0] > 2021 ||
+               (version[0] == 2021 && version[1] > 3) ||
+               (version[0] == 2021 && version[1] == 3 && version[2] >= 10)) //2021.3.10f1 and up
+            {
+                m_PlayerSubPrograms = ReadSerializedPlayerSubProgramArrayArray(reader);
+                m_ParameterBlobIndices = reader.ReadUInt32ArrayArray();
             }
 
             if ((version[0] == 2020 && version[1] > 3) ||
@@ -719,6 +729,42 @@ namespace AssetStudio
                 m_SerializedKeywordStateMask = reader.ReadUInt16Array();
                 reader.AlignStream();
             }
+        }
+
+        private static SerializedPlayerSubProgram[][] ReadSerializedPlayerSubProgramArrayArray(ObjectReader reader)
+        {
+            int outerSize = reader.ReadInt32();
+            var array = new SerializedPlayerSubProgram[outerSize][];
+            for (int i = 0; i < outerSize; i++)
+            {
+                int innerSize = reader.ReadInt32();
+                array[i] = new SerializedPlayerSubProgram[innerSize];
+                for (int j = 0; j < innerSize; j++)
+                {
+                    array[i][j] = new SerializedPlayerSubProgram(reader);
+                }
+                reader.AlignStream();
+            }
+            reader.AlignStream();
+            return array;
+        }
+    }
+
+    public class SerializedPlayerSubProgram
+    {
+        public uint m_BlobIndex;
+        public ushort[] m_KeywordIndices;
+        public long m_ShaderRequirements;
+        public sbyte m_GpuProgramType;
+
+        public SerializedPlayerSubProgram(ObjectReader reader)
+        {
+            m_BlobIndex = reader.ReadUInt32();
+            m_KeywordIndices = reader.ReadUInt16Array();
+            reader.AlignStream();
+            m_ShaderRequirements = reader.ReadInt64();
+            m_GpuProgramType = reader.ReadSByte();
+            reader.AlignStream();
         }
     }
 
@@ -756,7 +802,8 @@ namespace AssetStudio
         {
             var version = reader.version;
 
-            if (version[0] > 2020 || (version[0] == 2020 && version[1] >= 2)) //2020.2 and up
+            if ((version[0] > 2020 || (version[0] == 2020 && version[1] >= 2)) &&
+                (version[0] < 2023 || (version[0] == 2023 && version[1] == 0))) //2020.2 to 2023.0
             {
                 int numEditorDataHash = reader.ReadInt32();
                 m_EditorDataHash = new Hash128[numEditorDataHash];
@@ -974,16 +1021,14 @@ namespace AssetStudio
         public uint[][] compressedLengths;
         public uint[][] decompressedLengths;
         public byte[] compressedBlob;
+        public uint[] stageCounts;
 
         public Shader(ObjectReader reader) : base(reader)
         {
-            if (version[0] >= 6000)
-            {
-                m_Script = GetRawData();
-            }
-            else if (version[0] == 5 && version[1] >= 5 || version[0] > 5) //5.5 and up
+            if (version[0] == 5 && version[1] >= 5 || version[0] > 5) //5.5 and up
             {
                 m_ParsedForm = new SerializedShader(reader);
+                m_Name = m_ParsedForm.m_Name;
                 platforms = reader.ReadUInt32Array().Select(x => (ShaderCompilerPlatform)x).ToArray();
                 if (version[0] > 2019 || (version[0] == 2019 && version[1] >= 3)) //2019.3 and up
                 {
@@ -999,6 +1044,12 @@ namespace AssetStudio
                 }
                 compressedBlob = reader.ReadUInt8Array();
                 reader.AlignStream();
+
+                if (version[0] >= 6000)
+                {
+                    stageCounts = reader.ReadUInt32Array();
+                    reader.AlignStream();
+                }
 
                 var m_DependenciesCount = reader.ReadInt32();
                 for (int i = 0; i < m_DependenciesCount; i++)
@@ -1018,6 +1069,11 @@ namespace AssetStudio
 
                 var m_ShaderIsBaked = reader.ReadBoolean();
                 reader.AlignStream();
+
+                if (version[0] >= 6000)
+                {
+                    var m_AssetGUID = reader.ReadBytes(16);
+                }
             }
             else
             {

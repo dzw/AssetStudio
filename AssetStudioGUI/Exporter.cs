@@ -65,13 +65,129 @@ namespace AssetStudioGUI
 
         public static bool ExportShader(AssetItem item, string exportPath)
         {
+            var m_Shader = (Shader)item.Asset;
+            if (IsUnity6000RawShader(m_Shader))
+            {
+                if (!TryExportFile(exportPath, item, ".bin", out var rawExportPath))
+                    return false;
+                File.WriteAllBytes(rawExportPath, m_Shader.GetRawData());
+                ExportYamlShaderEditorPatches(exportPath, m_Shader.version);
+                return true;
+            }
+
             if (!TryExportFile(exportPath, item, ".shader", out var exportFullPath))
                 return false;
-            var m_Shader = (Shader)item.Asset;
             var str = m_Shader.Convert();
             File.WriteAllText(exportFullPath, str);
             return true;
         }
+
+        private static bool IsUnity6000RawShader(Shader shader)
+        {
+            return shader.version[0] >= 6000
+                && shader.compressedBlob == null
+                && shader.m_SubProgramBlob == null;
+        }
+
+        private static void ExportYamlShaderEditorPatches(string exportPath, int[] version)
+        {
+            // AssetStudio does not have AssetRipper's YAML writer. These patches are still useful
+            // when the exported shaders are later replaced with Unity YAML Shader assets.
+            if (version[0] >= 2018)
+            {
+                WriteUnityPatch(exportPath, "YamlShaderPostprocessor", YamlShaderPostprocessorPatchText);
+            }
+            if (version[0] > 3 || version[0] == 3 && version.Length > 1 && version[1] >= 5)
+            {
+                WriteUnityPatch(exportPath, "AvoidSavingYamlShaders", AvoidSavingYamlShadersPatchText);
+            }
+        }
+
+        private static void WriteUnityPatch(string exportPath, string name, string text)
+        {
+            var patchDirectory = Path.Combine(exportPath, "Assets", "Editor", "AssetRipperPatches");
+            var patchPath = Path.Combine(patchDirectory, name + ".cs");
+            if (File.Exists(patchPath))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(patchDirectory);
+            File.WriteAllText(patchPath, text, Encoding.UTF8);
+        }
+
+        private const string YamlShaderPostprocessorPatchText = @"using System;
+using UnityEngine;
+using UnityEditor;
+
+namespace AssetRipperPatches.Editor
+{
+    /// <summary>
+    /// This script is AssetRipper's patch for shaders exported as YAML assets.
+    /// Such a shader can be assigned to and used by a material as a regular .shader asset,
+    /// but it does not work with Shader.Find() unless we explicitly register it.
+    /// Note that this patch only works for a limited range of Unity versions
+    /// since it uses ShaderUtil.RegisterShader(), which is only available in Unity 2018+.
+    /// </summary>
+    public class YamlShaderPostprocessor : AssetPostprocessor
+    {
+        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+        {
+            foreach (var importedAsset in importedAssets)
+            {
+                if (!importedAsset.EndsWith("".asset"", StringComparison.Ordinal)) continue;
+                Shader yamlShader = AssetDatabase.LoadMainAssetAtPath(importedAsset) as Shader;
+                if (yamlShader == null) continue;
+                ShaderUtil.RegisterShader(yamlShader);
+                Debug.Log($""Registered shader \""{yamlShader.name}\"" from {importedAsset}"");
+            }
+        }
+    }
+}
+";
+
+        private const string AvoidSavingYamlShadersPatchText = @"using System;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+
+namespace AssetRipperPatches.Editor
+{
+    /// <summary>
+    /// This script is AssetRipper's patch for shaders exported as YAML assets.
+    /// Such a shader asset can be corrupted if Unity Editor thinks it is dirty and tries to save it.
+    /// Manual repro of the issue is easy as a simple call of EditorUtility.SetDirty(someYamlShaderAsset) followed by a Save Project.
+    /// Hence we use this script to prevent Unity from saving YAML shader assets.
+    /// </summary>
+    class AvoidSavingYamlShaders
+        // AssetModificationProcessor is a new API added since Unity 3.5. However, it is not in the UnityEditor namespace until Unity 4.0.
+#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_4_7 || UNITY_5 || UNITY_2017_1_OR_NEWER
+        : UnityEditor.AssetModificationProcessor
+#elif UNITY_3_5
+        : AssetModificationProcessor
+#endif
+    {
+        private static readonly List<string> _pathList = new List<string>();
+
+        private static string[] OnWillSaveAssets(string[] paths)
+        {
+            _pathList.Clear();
+            foreach (string path in paths)
+            {
+                if (path.EndsWith("".asset"", StringComparison.Ordinal) && AssetDatabase.LoadMainAssetAtPath(path) is Shader)
+                {
+                    Debug.Log(string.Format(""Unity's attempt to overwrite the YAML Shader asset has been blocked: {0}"", path));
+                }
+                else
+                {
+                    _pathList.Add(path);
+                }
+            }
+            return _pathList.ToArray();
+        }
+    }
+}
+";
 
         public static bool ExportTextAsset(AssetItem item, string exportPath)
         {
